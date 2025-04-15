@@ -59,7 +59,7 @@ registerDoParallel(cores = c(detectCores()-1))
 
 # Prepare data
 
-dataperpoint <- dcast(dataprp, code_point + habit + zonebio ~ code_sp, fun.aggregate = sum,value.var="abond")
+dataperpoint <- reshape2::dcast(dataprp, code_point + habit + zonebio ~ code_sp, fun.aggregate = sum,value.var="abond")
 
 # Run the function
 
@@ -97,7 +97,7 @@ source("function_temporal_associations.R")
 data_ts_0 <- as.data.frame(dataprp %>% group_by(code_square, zonebio, habit, code_sp, year) %>% summarize(abond=sum(abond), count=n()))
 
 data_ts_0b <- ddply(data_ts_0, .(code_square, zonebio, habit), function(x){
-  large_data <- dcast(droplevels(x), code_square + zonebio + habit + code_sp ~ year, fun.aggregate=sum, value.var="abond")
+  large_data <- reshape2::dcast(droplevels(x), code_square + zonebio + habit + code_sp ~ year, fun.aggregate=sum, value.var="abond")
   long_data <- melt(large_data, id.vars=c("code_square","zonebio","habit","code_sp"))
   return(long_data)
 })
@@ -105,7 +105,9 @@ names(data_ts_0b)[c(5,6)] <- c("year","abond")
 
 data_ts_0b$year <- as.numeric(as.character(data_ts_0b$year))
 
-data_ts_0b <- data_ts_0b[order(data_ts_0b[1],data_ts_0b[2],data_ts_0b[3],data_ts_0b[4],data_ts_0b[5]),]
+data_ts_0b_cols <- colnames(data_ts_0b)
+
+data_ts_0b <- data_ts_0b %>% arrange(across(all_of(data_ts_0b_cols)))
 
 # Calculate time-series length
 
@@ -443,7 +445,7 @@ d <- data.frame(d, pair2=paste(d$spj2,d$spi2,sep="_"))
 ```{r}
 habitat_sp <- as.data.frame(dataprp %>% group_by(code_sp, habit) %>% summarize(ab=sum(abond)))
 habitat_sp <- droplevels(subset(habitat_sp, !(habit=="NA_NA")))
-habitat_sp_wide <- dcast(habitat_sp, code_sp~habit)
+habitat_sp_wide <- reshape2::dcast(habitat_sp, code_sp~habit)
 habitat_sp_wide[is.na(habitat_sp_wide)] <- 0
 habitat_sp <- melt(habitat_sp_wide)
 names(habitat_sp)[c(2:3)] <- c("habit","ab")
@@ -451,7 +453,7 @@ habitat_sp_count <- as.data.frame(habitat_sp %>% group_by(code_sp) %>% summarize
 habitat_sp <- merge(habitat_sp,habitat_sp_count, by="code_sp",all=T)
 habitat_sp$freq <- habitat_sp$ab/habitat_sp$count
 
-habitat_sp_wide <- dcast(habitat_sp[,c("code_sp","habit","ab")], code_sp~habit)
+habitat_sp_wide <- reshape2::dcast(habitat_sp[,c("code_sp","habit","ab")], code_sp~habit)
 row.names(habitat_sp_wide) <- habitat_sp_wide$code_sp 
 habitat_sp_wide$code_sp <- NULL
 
@@ -884,67 +886,16 @@ ggplot(df, aes(x = boxOdds, y = boxLabels)) +
 ### Function to calculate metrics of species association networks
 
 ```{r}
-library(rnetcarto)
 
-x <- droplevels(dataprp[which(dataprp$code_point==unique(dataprp$code_point)[10] & dataprp$year == 2008),])
+source("function_community_nb_link.R")
 
-community_nb_link <- function(x){
-  
-  # calculate indices for the observed data
-  
-  b <- levels(droplevels(x$code_sp))
-  
-  datasso <- data_interaction_possible[which(data_interaction_possible$spA %in% b & data_interaction_possible$spB %in% b),c("spA","spB","obs_temp_asso")]
-  
-  adj_mat <- datasso
-  for(i in 1:length(b)){
-    adj_mat <- rbind(adj_mat, data.frame(spA=b[i],spB=b[i],obs_temp_asso=0))
-  }
-  adj_mat <- dcast(adj_mat, spA ~ spB, value.var="obs_temp_asso")
-  row.names(adj_mat) <- adj_mat$spA
-  adj_mat$spA <- NULL
-  
-  # degree ditribution
-  
-  adj_mat[lower.tri(adj_mat)] <- t(adj_mat)[lower.tri(adj_mat)]
-  data_names <- data.frame(t(setNames(rep(0,length(unique(dataprp$code_sp))), sort(unique(dataprp$code_sp)))))
-  deg_dist <- data.frame(t(apply(adj_mat,1,sum)))
-  deg_dist <- rbind.fill(data_names,deg_dist)[2,]
-  
-  # modularity
-  
-  adj_mat[lower.tri(adj_mat)] <- 0
-  modularity <- netcarto(as.matrix(adj_mat))
-  
-  # connectance
-  
-  connectance <- sum(datasso$obs_temp_asso)/nrow(datasso)
-
-result <- cbind(data.frame(nb_association = sum(datasso$obs_temp_asso), # total number of observed associations
-                     nb_sp = length(b), # total number of species
-                     nb_asso_pot = nrow(datasso), # total number of potential association
-                     connectance = connectance,
-                     modularity = modularity[[2]]),
-                     deg_dist)
-return(result)
-}
-
-community_nb_link2 <- function(x){tryCatch(community_nb_link(x),
-                                         error=function(e) cbind(data.frame(nb_association = NA,
-                                         nb_sp = NA,
-                                         nb_asso_pot = NA,
-                                         connectance = NA,
-                                         modularity = NA)),
-                                         data.frame(t(setNames(rep(NA,length(unique(dataprp$code_sp))), sort(unique(dataprp$code_sp))))))}
-                                         
-                                         
 ```
 
 ### Process function and add additional data
 
 ```{r}
 
-network_structure_square <- ddply(droplevels(dataprp), .(code_square, year), .fun=community_nb_link2, .parallel =F, .progress = "text")
+network_structure_square <- ddply(droplevels(dataprp), .(code_square, year), .fun=community_nb_link, .parallel =F, .progress = "text", data_interaction_possible)
 
 network_structure_square <- merge(network_structure_square, square_centroid, by="code_square", all.x=T)
 
@@ -1889,7 +1840,7 @@ adj_mat <- datasso
 for(i in 1:length(b)){
   adj_mat <- rbind(adj_mat, data.frame(spA=b[i],spB=b[i],obs_temp_asso=0))
 }
-adj_mat <- dcast(adj_mat, spA ~ spB, value.var="obs_temp_asso")
+adj_mat <- reshape2::dcast(adj_mat, spA ~ spB, value.var="obs_temp_asso")
 row.names(adj_mat) <- adj_mat$spA
 adj_mat$spA <- NULL
 adj_mat[lower.tri(adj_mat)] <- t(adj_mat)[lower.tri(adj_mat)]
@@ -2126,7 +2077,7 @@ names(data_rand_tot_sp)[1] <- "code_point"
 
 # Prepare data
 
-dataperpoint_rand <- dcast(data_rand_tot_sp, code_point + year ~ code_sp, fun.aggregate = sum,value.var="abond")
+dataperpoint_rand <- reshape2::dcast(data_rand_tot_sp, code_point + year ~ code_sp, fun.aggregate = sum,value.var="abond")
 
 # Run the function
 
@@ -2148,7 +2099,7 @@ spa_tem_associations_rand$spatial_asso[spa_tem_associations_rand$pval>0.05] <- N
 
 # Prepare data
 
-dataperpoint_rand <- dcast(data_rand_tot_sp, code_point ~ code_sp, fun.aggregate = sum,value.var="abond")
+dataperpoint_rand <- reshape2::dcast(data_rand_tot_sp, code_point ~ code_sp, fun.aggregate = sum,value.var="abond")
 
 # Run the function
 

@@ -1,6 +1,6 @@
 # Function to calculate metrics of species association networks
 
-community_nb_link_init <- function(x){
+community_nb_link_init <- function(x, data_interaction_possible){
   
   # calculate indices for the observed data
   
@@ -12,7 +12,7 @@ community_nb_link_init <- function(x){
   for(i in 1:length(b)){
     adj_mat <- rbind(adj_mat, data.frame(spA=b[i],spB=b[i],obs_temp_asso=0))
   }
-  adj_mat <- dcast(adj_mat, spA ~ spB, value.var="obs_temp_asso")
+  adj_mat <- reshape2::dcast(adj_mat, spA ~ spB, value.var="obs_temp_asso")
   row.names(adj_mat) <- adj_mat$spA
   adj_mat$spA <- NULL
   
@@ -41,7 +41,7 @@ community_nb_link_init <- function(x){
   return(result)
 }
 
-community_nb_link <- function(x){tryCatch(community_nb_link_init(x),
+community_nb_link <- function(x,data_interaction_possible){tryCatch(community_nb_link_init(x,data_interaction_possible),
                                           error=function(e) cbind(data.frame(nb_association = NA,
                                                                              nb_sp = NA,
                                                                              nb_asso_pot = NA,
