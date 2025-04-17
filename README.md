@@ -16,7 +16,7 @@ The R scripts have been implemented on R version 4.2.2. All the required R packa
 `raw_data`: contains the initial datasets used to run the whole analysis that came from the French Breeding Bird Survey (STOC-EPS https://www.vigienature.fr/fr/suivi-temporel-des-oiseaux-communs-stoc)  
 `function_XXX.R`: scripts of functions for the analysis  
 `packages.R`: R packages required  
-`main_code.md`: R script with explanations
+`main_code.Rmd`: R script with explanations
 
 ### File formats 
 
