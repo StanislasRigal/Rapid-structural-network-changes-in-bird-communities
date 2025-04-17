@@ -13,18 +13,18 @@ The R scripts have been implemented on R version 4.2.2. All the requiered R pack
 ### Folder structure
 
 `output`: provides intermediate datasets contructed along the analysis
-`raw_data`: contains the initial datasets used to run the whole analysis
+`raw_data`: contains the initial datasets used to run the whole analysis that came from the French Breeding Bird Survey (STOC-EPS https://www.vigienature.fr/fr/suivi-temporel-des-oiseaux-communs-stoc)
 `function_XXX.R`: scripts of functions for the analysis
 `packages.R`: R packages requiered
 `main_code.md`: R script with explanations
 
 ### File formats 
 
-Raw data are provided both in `csv` and `rds`. Output data are in `rds` and can be used in R.
+Raw data are provided both in `csv` (and zipped csv) and `rds`. Output data are in `rds` and can be used in R.
 
 ## Usage
 
-Please refer to the`main_code.md` file for usage details.
+Please refer to the`main_code.Rmd` file for usage details.
 
 ## License
 

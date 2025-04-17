@@ -101,7 +101,7 @@ multisp_CCM_intern2 <- function(x, niter, i){
 multisp_CCM <- function(x, niter=100){
   
   x <- droplevels(x[,c("code_sp","code_square","year","abond")])
-  x <- dcast(x, code_square+year ~ code_sp, value.var="abond")
+  x <- reshape2::dcast(x, code_square+year ~ code_sp, value.var="abond")
   
   if(ncol(x)>3){
     to_test <- combn(3:ncol(x),2)
@@ -179,7 +179,7 @@ E_dim2 <- function(x, i){
 Edim_multisp_CCM <- function(x){
   
   x <- droplevels(x[,c("code_sp","code_square","year","abond")])
-  x <- dcast(x, code_square+year ~ code_sp, value.var="abond")
+  x <- reshape2::dcast(x, code_square+year ~ code_sp, value.var="abond")
   
   if(ncol(x)>3){
     to_test <- combn(3:ncol(x),2)
@@ -278,7 +278,7 @@ smap_fun_signif <- function(res_ccm,data_ccm){
   data_ccm$code_sp[data_ccm$code_sp==res_ccm$spA] <- "spA"
   data_ccm$code_sp[data_ccm$code_sp==res_ccm$spB] <- "spB"
   
-  data_ccm2 <- droplevels(na.omit(dcast(data_ccm, code_square+year ~ code_sp, value.var="abond")))
+  data_ccm2 <- droplevels(na.omit(reshape2::dcast(data_ccm, code_square+year ~ code_sp, value.var="abond")))
   
   res_smap <- dlply(data_ccm2, .(code_square), .fun=smap_fun)
   
@@ -363,7 +363,7 @@ smap_fun_signif_rand <- function(res_ccm,data_ccm){
   data_ccm$code_sp[data_ccm$code_sp==res_ccm$spA] <- "spA"
   data_ccm$code_sp[data_ccm$code_sp==res_ccm$spB] <- "spB"
   
-  data_ccm2 <- droplevels(na.omit(dcast(data_ccm, code_square+year ~ code_sp, value.var="abond")))
+  data_ccm2 <- droplevels(na.omit(reshape2::dcast(data_ccm, code_square+year ~ code_sp, value.var="abond")))
   
   res_smap <- dlply(data_ccm2, .(code_square), .fun=smap_fun_rand)
   
